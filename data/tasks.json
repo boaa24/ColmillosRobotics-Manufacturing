@@ -1,0 +1,8 @@
+{
+  "tasks": [
+    { "id": "T-001", "name": "Finalizar planos (rev B)", "assignee": "Equipo CAD", "start": "2026-03-02", "end": "2026-03-06", "status": "doing" },
+    { "id": "T-002", "name": "Corte perfiles DXF", "assignee": "Manufactura", "start": "2026-03-07", "end": "2026-03-10", "status": "todo" },
+    { "id": "T-003", "name": "CNC Soporte motor (x2)", "assignee": "CNC", "start": "2026-03-11", "end": "2026-03-14", "status": "todo" },
+    { "id": "T-004", "name": "Ensamble y verificación", "assignee": "Integración", "start": "2026-03-15", "end": "2026-03-18", "status": "todo" }
+  ]
+}
