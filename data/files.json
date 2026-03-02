@@ -1,0 +1,31 @@
+{
+  "items": [
+    {
+      "type": "plan",
+      "id": "PL-001",
+      "name": "Chasis - Plano general (PDF)",
+      "desc": "Plano de referencia para cotas y revisión.",
+      "assembly": "Chasis",
+      "tags": ["pdf", "revA"],
+      "path": "files/plans/chasis_plano_general_revA.pdf"
+    },
+    {
+      "type": "plan",
+      "id": "PL-002",
+      "name": "Soporte motor - DXF",
+      "desc": "Perfil para corte CNC/laser.",
+      "assembly": "Actuación",
+      "tags": ["dxf", "corte"],
+      "path": "files/plans/soporte_motor_revB.dxf"
+    },
+    {
+      "type": "gcode",
+      "id": "NC-010",
+      "name": "Soporte motor - G-code (Al 6061)",
+      "desc": "Setup: fresa 6mm, 2.5D, origin en esquina.",
+      "assembly": "Actuación",
+      "tags": ["cnc", "al6061"],
+      "path": "files/gcode/soporte_motor_al6061.nc"
+    }
+  ]
+}

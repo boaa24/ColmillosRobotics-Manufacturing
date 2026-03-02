@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Robotics Manufacturing Hub</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="wrap topbar__inner">
+      <div class="brand">
+        <div class="brand__mark" aria-hidden="true">RB</div>
+        <div>
+          <div class="brand__title">Robotics Manufacturing Hub</div>
+          <div class="brand__subtitle">Planos • G-code • BOM • Gantt</div>
+        </div>
+      </div>
+
+      <div class="topbar__actions">
+        <button class="btn btn--ghost" id="btnExport">Exportar progreso</button>
+        <label class="btn btn--ghost" for="importFile">Importar</label>
+        <input id="importFile" type="file" accept="application/json" hidden />
+        <button class="btn btn--danger" id="btnReset">Reset local</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card">
+      <div class="card__head">
+        <h1 class="h1">Panel</h1>
+        <div class="pillrow" id="globalStats">
+          <!-- JS -->
+        </div>
+      </div>
+
+      <nav class="tabs" role="tablist" aria-label="Secciones">
+        <button class="tab is-active" data-tab="files" role="tab" aria-selected="true">Archivos</button>
+        <button class="tab" data-tab="bom" role="tab" aria-selected="false">BOM</button>
+        <button class="tab" data-tab="gantt" role="tab" aria-selected="false">Gantt</button>
+        <button class="tab" data-tab="about" role="tab" aria-selected="false">Info</button>
+      </nav>
+
+      <!-- FILES -->
+      <section class="tabpane is-active" id="tab-files" role="tabpanel">
+        <div class="row row--spread row--gap">
+          <div class="field">
+            <label class="label" for="qFiles">Buscar</label>
+            <input id="qFiles" class="input" type="search" placeholder="pieza, material, tag, proceso..." />
+          </div>
+
+          <div class="field">
+            <label class="label" for="filterType">Tipo</label>
+            <select id="filterType" class="select">
+              <option value="all">Todos</option>
+              <option value="plan">Planos</option>
+              <option value="gcode">G-code</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="label" for="filterAssembly">Ensamble</label>
+            <select id="filterAssembly" class="select">
+              <option value="all">Todos</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="subcard">
+            <div class="subcard__head">
+              <h2 class="h2">Planos</h2>
+              <span class="muted" id="countPlans">—</span>
+            </div>
+            <div class="list" id="plansList"></div>
+          </div>
+
+          <div class="subcard">
+            <div class="subcard__head">
+              <h2 class="h2">G-code</h2>
+              <span class="muted" id="countGcode">—</span>
+            </div>
+            <div class="list" id="gcodeList"></div>
+          </div>
+        </div>
+
+        <p class="hint">
+          Nota: GitHub Pages no “lista carpetas” solo. Este sitio lee un manifiesto en <code>data/files.json</code>.
+          Agrega tus archivos al repo y registra su ruta en ese JSON.
+        </p>
+      </section>
+
+      <!-- BOM -->
+      <section class="tabpane" id="tab-bom" role="tabpanel">
+        <div class="row row--spread row--gap">
+          <div class="field">
+            <label class="label" for="qBom">Buscar pieza</label>
+            <input id="qBom" class="input" type="search" placeholder="id, nombre, material, proceso..." />
+          </div>
+
+          <div class="field">
+            <label class="label" for="bomView">Vista</label>
+            <select id="bomView" class="select">
+              <option value="assemblies">Por ensamble (exploded)</option>
+              <option value="flat">Lista plana</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="label" for="bomOnlyPending">Filtro</label>
+            <select id="bomOnlyPending" class="select">
+              <option value="all">Todas</option>
+              <option value="pending">Solo pendientes</option>
+              <option value="done">Solo completas</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="bomStats" id="bomStats"></div>
+
+        <div id="bomContainer"></div>
+
+        <p class="hint">
+          El progreso se guarda en tu navegador (local). Para coordinar equipo: usa Export/Import (arriba) y compártanlo.
+        </p>
+      </section>
+
+      <!-- GANTT -->
+      <section class="tabpane" id="tab-gantt" role="tabpanel">
+        <div class="row row--spread row--gap">
+          <div class="field">
+            <label class="label" for="filterAssignee">Responsable</label>
+            <select id="filterAssignee" class="select">
+              <option value="all">Todos</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="label" for="filterStatus">Estado</label>
+            <select id="filterStatus" class="select">
+              <option value="all">Todos</option>
+              <option value="todo">Por hacer</option>
+              <option value="doing">En proceso</option>
+              <option value="done">Hecho</option>
+              <option value="blocked">Bloqueado</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="label" for="ganttZoom">Zoom</label>
+            <select id="ganttZoom" class="select">
+              <option value="day">Día</option>
+              <option value="week" selected>Semana</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="ganttLegend">
+          <span class="dot dot--todo"></span> Por hacer
+          <span class="dot dot--doing"></span> En proceso
+          <span class="dot dot--done"></span> Hecho
+          <span class="dot dot--blocked"></span> Bloqueado
+        </div>
+
+        <div class="ganttWrap">
+          <div id="gantt"></div>
+        </div>
+
+        <div class="subcard" style="margin-top:14px;">
+          <div class="subcard__head">
+            <h2 class="h2">Tareas (marcar estado)</h2>
+            <span class="muted" id="taskCount">—</span>
+          </div>
+          <div id="taskList" class="list"></div>
+        </div>
+      </section>
+
+      <!-- ABOUT -->
+      <section class="tabpane" id="tab-about" role="tabpanel">
+        <div class="prose">
+          <h2 class="h2">Cómo usar esto</h2>
+          <ol>
+            <li>Sube tus archivos (PDF/DXF/STEP + .nc/.gcode) al repo, por ejemplo en <code>/files/</code>.</li>
+            <li>Regístralos en <code>data/files.json</code> para que aparezcan en “Archivos”.</li>
+            <li>Edita <code>data/bom.json</code> para tu BOM real (ensambles → piezas → cantidad).</li>
+            <li>Edita <code>data/tasks.json</code> para tu plan (Gantt).</li>
+            <li>Habilita GitHub Pages (Settings → Pages) y listo.</li>
+          </ol>
+
+          <h2 class="h2">Limitación importante</h2>
+          <p>
+            Esto es un sitio estático: no hay base de datos. Por eso el avance se guarda local por navegador.
+            Para compartir avance: Export/Import.
+          </p>
+        </div>
+      </section>
+    </section>
+
+    <footer class="footer">
+      <span class="muted">v1 • GitHub Pages • Diseño sobrio</span>
+    </footer>
+  </main>
+
+  <script src="assets/app.js"></script>
+</body>
+</html>

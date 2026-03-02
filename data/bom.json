@@ -1,0 +1,18 @@
+{
+  "assemblies": [
+    {
+      "name": "Chasis",
+      "parts": [
+        { "id": "CH-001", "name": "Placa base", "qty": 1, "material": "Al 6061", "process": "CNC", "notes": "Revisar tolerancia para rodamientos." },
+        { "id": "CH-002", "name": "Separador M3", "qty": 8, "material": "Acero", "process": "Compra", "notes": "Normalizado" }
+      ]
+    },
+    {
+      "name": "Actuación",
+      "parts": [
+        { "id": "AC-010", "name": "Soporte motor", "qty": 2, "material": "Al 6061", "process": "CNC", "notes": "Usar fijación paralela." },
+        { "id": "AC-011", "name": "Polea", "qty": 1, "material": "Al 7075", "process": "Torno", "notes": "" }
+      ]
+    }
+  ]
+}
