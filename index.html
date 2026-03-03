@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Robotics Manufacturing Hub</title>
-  <link rel="stylesheet" href="./assets/styles.css?v=20">
+  <link rel="stylesheet" href="./assets/styles.css?v=500">
 </head>
 
 <body>
@@ -14,7 +14,7 @@
         <div class="brand__mark" aria-hidden="true">RB</div>
         <div>
           <div class="brand__title">Robotics Manufacturing Hub</div>
-          <div class="brand__subtitle">Flipper • Chasis • BOM • Gantt • Archivos</div>
+          <div class="brand__subtitle">Flipper • Chasis • BOM • Gantt</div>
         </div>
       </div>
 
@@ -109,33 +109,34 @@
           </div>
         </div>
 
-        <div class="ganttLegend">
-          <span class="dot dot--todo"></span> Por hacer
-          <span class="dot dot--doing"></span> En proceso
-          <span class="dot dot--done"></span> Hecho
-          <span class="dot dot--blocked"></span> Bloqueado
-        </div>
-
         <div class="ganttWrap">
           <div id="gantt"></div>
         </div>
 
         <div class="sectionGrid" style="margin-top:14px;">
-          <!-- Editor tareas -->
+          <!-- Editor -->
           <div class="subcard">
             <div class="subcard__head">
               <h2 class="h2">Editor de tareas</h2>
               <span class="muted" id="taskCount">—</span>
             </div>
-
             <div class="pad">
               <div class="formGrid">
                 <div class="field">
-                  <label class="label" for="taskId">ID (auto)</label>
-                  <input id="taskId" class="input" type="text" placeholder="T-001" disabled />
+                  <label class="label" for="taskId">ID</label>
+                  <input id="taskId" class="input" type="text" disabled />
+                </div>
+                <div class="field">
+                  <label class="label" for="taskStatusEdit">Estado</label>
+                  <select id="taskStatusEdit" class="select">
+                    <option value="todo">Por hacer</option>
+                    <option value="doing">En proceso</option>
+                    <option value="done">Hecho</option>
+                    <option value="blocked">Bloqueado</option>
+                  </select>
                 </div>
 
-                <div class="field">
+                <div class="field" style="grid-column:1/-1;">
                   <label class="label" for="taskName">Nombre</label>
                   <input id="taskName" class="input" type="text" placeholder="CNC Soporte motor (x2)" />
                 </div>
@@ -143,16 +144,6 @@
                 <div class="field">
                   <label class="label" for="taskAssignee">Responsable</label>
                   <input id="taskAssignee" class="input" type="text" placeholder="CNC / CAD / Integración" />
-                </div>
-
-                <div class="field">
-                  <label class="label" for="taskStatus">Estado</label>
-                  <select id="taskStatus" class="select">
-                    <option value="todo">Por hacer</option>
-                    <option value="doing">En proceso</option>
-                    <option value="done">Hecho</option>
-                    <option value="blocked">Bloqueado</option>
-                  </select>
                 </div>
 
                 <div class="field">
@@ -164,32 +155,32 @@
                   <label class="label" for="taskEnd">Fin</label>
                   <input id="taskEnd" class="input" type="date" />
                 </div>
+
+                <div class="field" style="grid-column:1/-1;">
+                  <label class="label" for="taskAttach">Adjuntar archivo (ruta del repo o URL)</label>
+                  <div class="row row--gap">
+                    <input id="taskAttach" class="input" type="text" placeholder="files/flipper/machining/planos/xxx.pdf" />
+                    <button class="btn btn--ghost" id="btnAttachAdd">Agregar</button>
+                  </div>
+                  <div class="hint">No sube archivos al repo; solo guarda el link para referencia.</div>
+                </div>
               </div>
 
               <div class="row row--gap" style="margin-top:10px;">
                 <button class="btn" id="btnTaskAdd">Agregar</button>
                 <button class="btn btn--ghost" id="btnTaskUpdate">Actualizar</button>
-                <button class="btn btn--ghost" id="btnTaskClear">Limpiar</button>
                 <button class="btn btn--danger" id="btnTaskDelete">Borrar</button>
+                <button class="btn btn--ghost" id="btnTaskClear">Limpiar</button>
               </div>
 
               <div class="hr"></div>
 
-              <div class="field">
-                <label class="label" for="taskAttachPath">Adjuntar archivo (ruta del repo o URL)</label>
-                <div class="row row--gap">
-                  <input id="taskAttachPath" class="input" type="text" placeholder="files/flipper/machining/planos/xxx.pdf" />
-                  <button class="btn btn--ghost" id="btnTaskAttachAdd">Agregar adjunto</button>
-                </div>
-                <div class="hint">Esto NO sube archivos; solo guarda el link para referencia.</div>
-              </div>
-
-              <div class="subcard" style="margin-top:12px;">
+              <div class="subcard">
                 <div class="subcard__head">
-                  <h2 class="h2">Adjuntos de la tarea</h2>
-                  <span class="muted" id="taskAttachCount">0</span>
+                  <h2 class="h2">Adjuntos</h2>
+                  <span class="muted" id="attachCount">0</span>
                 </div>
-                <div class="list" id="taskAttachList"></div>
+                <div class="list" id="attachList"></div>
               </div>
 
               <div class="row row--gap" style="margin-top:12px;">
@@ -200,117 +191,33 @@
             </div>
           </div>
 
-          <!-- Registro archivos -->
+          <!-- Lista -->
           <div class="subcard">
             <div class="subcard__head">
-              <h2 class="h2">Registro de archivos</h2>
-              <span class="muted">Exporta a files.json</span>
+              <h2 class="h2">Tareas (click para editar)</h2>
+              <span class="muted" id="taskListCount">—</span>
             </div>
-
-            <div class="pad">
-              <div class="hint">
-                GitHub Pages no puede “subir al repo” desde aquí sin API/Token.
-                Esto genera entradas de <code>data/files.json</code> y rutas sugeridas.
-              </div>
-
-              <div class="formGrid" style="margin-top:10px;">
-                <div class="field">
-                  <label class="label" for="fileGroup">Grupo</label>
-                  <select id="fileGroup" class="select">
-                    <option value="flipper">flipper</option>
-                    <option value="chasis">chasis</option>
-                  </select>
-                </div>
-
-                <div class="field">
-                  <label class="label" for="fileSection">Sección</label>
-                  <select id="fileSection" class="select">
-                    <option value="machining">machining</option>
-                    <option value="print3d">print3d</option>
-                  </select>
-                </div>
-
-                <div class="field">
-                  <label class="label" for="fileType">Tipo</label>
-                  <select id="fileType" class="select">
-                    <option value="plan">plan</option>
-                    <option value="gcode">gcode</option>
-                    <option value="stl">stl</option>
-                  </select>
-                </div>
-
-                <div class="field">
-                  <label class="label" for="fileId">ID (opcional)</label>
-                  <input id="fileId" class="input" type="text" placeholder="PL-F-001" />
-                </div>
-
-                <div class="field" style="grid-column:1/-1;">
-                  <label class="label" for="fileName">Nombre visible</label>
-                  <input id="fileName" class="input" type="text" placeholder="Flipper - Plano soporte" />
-                </div>
-
-                <div class="field" style="grid-column:1/-1;">
-                  <label class="label" for="filePath">Ruta (relativa al repo)</label>
-                  <input id="filePath" class="input" type="text" placeholder="files/flipper/machining/planos/soporte.pdf" />
-                </div>
-
-                <div class="field" style="grid-column:1/-1;">
-                  <label class="label" for="fileTags">Tags (coma)</label>
-                  <input id="fileTags" class="input" type="text" placeholder="revA, cnc, al6061" />
-                </div>
-
-                <div class="field" style="grid-column:1/-1;">
-                  <label class="label" for="filePick">Selecciona archivo local (solo para autollenar nombre/ruta)</label>
-                  <input id="filePick" class="input" type="file" />
-                </div>
-              </div>
-
-              <div class="row row--gap" style="margin-top:10px;">
-                <button class="btn" id="btnFileAdd">Agregar al manifiesto</button>
-                <button class="btn btn--ghost" id="btnFilesExport">Exportar files.json</button>
-              </div>
-
-              <div class="hr"></div>
-
-              <div class="subcard">
-                <div class="subcard__head">
-                  <h2 class="h2">Manifiesto local</h2>
-                  <span class="muted" id="filesLocalCount">0</span>
-                </div>
-                <div class="list" id="filesLocalList"></div>
-              </div>
-            </div>
+            <div id="taskList" class="list"></div>
           </div>
-        </div>
-
-        <!-- Lista de tareas -->
-        <div class="subcard" style="margin-top:14px;">
-          <div class="subcard__head">
-            <h2 class="h2">Tareas (click para editar)</h2>
-            <span class="muted" id="taskListCount">—</span>
-          </div>
-          <div id="taskList" class="list"></div>
         </div>
       </section>
 
       <!-- INFO -->
       <section class="tabpane" id="tab-about" role="tabpanel">
         <div class="prose">
-          <h2 class="h2">Cómo funciona</h2>
-          <ul>
-            <li>Gantt editable: se guarda en tu navegador. Para compartir: export/import.</li>
-            <li>Archivos: el sitio muestra links a rutas del repo (no sube archivos por sí mismo).</li>
-            <li>Para subir archivos: ve a GitHub → carpeta <code>files/...</code> → Add file → Upload files → Commit.</li>
-          </ul>
+          <p class="muted">
+            Nota: GitHub Pages no puede subir archivos al repositorio sin un backend o la API de GitHub con autenticación.
+            Aquí guardamos links y exportamos JSON para que lo suban por GitHub.
+          </p>
         </div>
       </section>
     </section>
 
     <footer class="footer">
-      <span class="muted">v3 • GitHub Pages</span>
+      <span class="muted">v4 • GitHub Pages</span>
     </footer>
   </main>
 
-  <script src="./assets/app.js?v=20"></script>
+  <script src="./assets/app.js?v=500"></script>
 </body>
 </html>
