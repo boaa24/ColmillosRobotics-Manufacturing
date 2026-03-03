@@ -14,7 +14,7 @@
         <div class="brand__mark" aria-hidden="true">RB</div>
         <div>
           <div class="brand__title">Robotics Manufacturing Hub</div>
-          <div class="brand__subtitle">Planos • G-code • BOM • Gantt</div>
+          <div class="brand__subtitle">Flipper • Chasis • Archivos • BOM • Gantt</div>
         </div>
       </div>
 
@@ -31,100 +31,52 @@
     <section class="card">
       <div class="card__head">
         <h1 class="h1">Panel</h1>
-        <div class="pillrow" id="globalStats">
-          <!-- JS -->
-        </div>
+        <div class="pillrow" id="globalStats"></div>
       </div>
 
       <nav class="tabs" role="tablist" aria-label="Secciones">
-        <button class="tab is-active" data-tab="files" role="tab" aria-selected="true">Archivos</button>
-        <button class="tab" data-tab="bom" role="tab" aria-selected="false">BOM</button>
+        <button class="tab is-active" data-tab="flipper" role="tab" aria-selected="true">Flipper</button>
+        <button class="tab" data-tab="chasis" role="tab" aria-selected="false">Chasis</button>
         <button class="tab" data-tab="gantt" role="tab" aria-selected="false">Gantt</button>
         <button class="tab" data-tab="about" role="tab" aria-selected="false">Info</button>
       </nav>
 
-      <!-- FILES -->
-      <section class="tabpane is-active" id="tab-files" role="tabpanel">
+      <!-- FLIPPER -->
+      <section class="tabpane is-active" id="tab-flipper" role="tabpanel">
         <div class="row row--spread row--gap">
           <div class="field">
-            <label class="label" for="qFiles">Buscar</label>
-            <input id="qFiles" class="input" type="search" placeholder="pieza, material, tag, proceso..." />
+            <label class="label" for="qFlipper">Buscar pieza/archivo</label>
+            <input id="qFlipper" class="input" type="search" placeholder="nombre, id..." />
           </div>
-
-          <div class="field">
-            <label class="label" for="filterType">Tipo</label>
-            <select id="filterType" class="select">
-              <option value="all">Todos</option>
-              <option value="plan">Planos</option>
-              <option value="gcode">G-code</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label class="label" for="filterAssembly">Ensamble</label>
-            <select id="filterAssembly" class="select">
-              <option value="all">Todos</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="grid2">
-          <div class="subcard">
-            <div class="subcard__head">
-              <h2 class="h2">Planos</h2>
-              <span class="muted" id="countPlans">—</span>
-            </div>
-            <div class="list" id="plansList"></div>
-          </div>
-
-          <div class="subcard">
-            <div class="subcard__head">
-              <h2 class="h2">G-code</h2>
-              <span class="muted" id="countGcode">—</span>
-            </div>
-            <div class="list" id="gcodeList"></div>
-          </div>
-        </div>
-
-        <p class="hint">
-          Nota: GitHub Pages no “lista carpetas” solo. Este sitio lee un manifiesto en <code>data/files.json</code>.
-          Agrega tus archivos al repo y registra su ruta en ese JSON.
-        </p>
-      </section>
-
-      <!-- BOM -->
-      <section class="tabpane" id="tab-bom" role="tabpanel">
-        <div class="row row--spread row--gap">
-          <div class="field">
-            <label class="label" for="qBom">Buscar pieza</label>
-            <input id="qBom" class="input" type="search" placeholder="id, nombre, material, proceso..." />
-          </div>
-
-          <div class="field">
-            <label class="label" for="bomView">Vista</label>
-            <select id="bomView" class="select">
-              <option value="assemblies">Por ensamble (exploded)</option>
-              <option value="flat">Lista plana</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label class="label" for="bomOnlyPending">Filtro</label>
-            <select id="bomOnlyPending" class="select">
+          <div class="field" style="max-width:260px;">
+            <label class="label" for="filterFlipper">Filtro</label>
+            <select id="filterFlipper" class="select">
               <option value="all">Todas</option>
               <option value="pending">Solo pendientes</option>
               <option value="done">Solo completas</option>
             </select>
           </div>
         </div>
+        <div id="flipperContent"></div>
+      </section>
 
-        <div class="bomStats" id="bomStats"></div>
-
-        <div id="bomContainer"></div>
-
-        <p class="hint">
-          El progreso se guarda en tu navegador (local). Para coordinar equipo: usa Export/Import (arriba) y compártanlo.
-        </p>
+      <!-- CHASIS -->
+      <section class="tabpane" id="tab-chasis" role="tabpanel">
+        <div class="row row--spread row--gap">
+          <div class="field">
+            <label class="label" for="qChasis">Buscar pieza/archivo</label>
+            <input id="qChasis" class="input" type="search" placeholder="nombre, id..." />
+          </div>
+          <div class="field" style="max-width:260px;">
+            <label class="label" for="filterChasis">Filtro</label>
+            <select id="filterChasis" class="select">
+              <option value="all">Todas</option>
+              <option value="pending">Solo pendientes</option>
+              <option value="done">Solo completas</option>
+            </select>
+          </div>
+        </div>
+        <div id="chasisContent"></div>
       </section>
 
       <!-- GANTT -->
@@ -177,29 +129,21 @@
         </div>
       </section>
 
-      <!-- ABOUT -->
+      <!-- INFO -->
       <section class="tabpane" id="tab-about" role="tabpanel">
         <div class="prose">
-          <h2 class="h2">Cómo usar esto</h2>
+          <h2 class="h2">Cómo meter archivos</h2>
           <ol>
-            <li>Sube tus archivos (PDF/DXF/STEP + .nc/.gcode) al repo, por ejemplo en <code>/files/</code>.</li>
-            <li>Regístralos en <code>data/files.json</code> para que aparezcan en “Archivos”.</li>
-            <li>Edita <code>data/bom.json</code> para tu BOM real (ensambles → piezas → cantidad).</li>
-            <li>Edita <code>data/tasks.json</code> para tu plan (Gantt).</li>
-            <li>Habilita GitHub Pages (Settings → Pages) y listo.</li>
+            <li>Sube archivos a tu repo (ej. <code>files/flipper/machining/planos/</code>).</li>
+            <li>Regístralos en <code>data/files.json</code> con <code>group</code>, <code>section</code> y <code>type</code>.</li>
+            <li>El avance (contadores) se guarda local en el navegador; para compartir: Export/Import.</li>
           </ol>
-
-          <h2 class="h2">Limitación importante</h2>
-          <p>
-            Esto es un sitio estático: no hay base de datos. Por eso el avance se guarda local por navegador.
-            Para compartir avance: Export/Import.
-          </p>
         </div>
       </section>
     </section>
 
     <footer class="footer">
-      <span class="muted">v1 • GitHub Pages • Diseño sobrio</span>
+      <span class="muted">v2 • GitHub Pages</span>
     </footer>
   </main>
 

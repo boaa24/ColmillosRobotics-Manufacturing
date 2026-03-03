@@ -1,17 +1,70 @@
 {
-  "assemblies": [
+  "groups": [
     {
-      "name": "Chasis",
-      "parts": [
-        { "id": "CH-001", "name": "Placa base", "qty": 1, "material": "Al 6061", "process": "CNC", "notes": "Revisar tolerancia para rodamientos." },
-        { "id": "CH-002", "name": "Separador M3", "qty": 8, "material": "Acero", "process": "Compra", "notes": "Normalizado" }
+      "name": "Flipper",
+      "key": "flipper",
+      "sections": [
+        {
+          "name": "Maquinado",
+          "key": "machining",
+          "parts": [
+            { "id": "fl_m_fliper", "name": "fliper", "qty": 2 },
+            { "id": "fl_m_flipercopia", "name": "fliperCopia", "qty": 2 },
+            { "id": "fl_m_fliperlateralder", "name": "fliperLateralDer", "qty": 2 },
+            { "id": "fl_m_fliperlateralder_copia", "name": "fliperLateralDer-cOPIA", "qty": 2 },
+            { "id": "fl_m_rueda_oru", "name": "Rueda Oru", "qty": 16 },
+            { "id": "fl_m_ejesoporteoruga", "name": "ejeSoporteOruga", "qty": 12 },
+            { "id": "fl_m_ejefrenteflipper", "name": "EjeFrenteFlipper", "qty": 4 },
+            { "id": "fl_m_ejeruedaoruga", "name": "EjeRuedaOruga", "qty": 8 },
+            { "id": "fl_m_ejeneoflipper", "name": "EjeNeoFlipper", "qty": 2 },
+            { "id": "fl_m_eje3i8intijera", "name": "eje3i8inTijera", "qty": 4 },
+            { "id": "fl_m_tijera", "name": "tijera", "qty": 16 },
+            { "id": "fl_m_ruedatijera", "name": "RuedaTijera", "qty": 8 },
+            { "id": "fl_m_ejetransmision", "name": "EjeTransmision", "qty": 2 }
+          ]
+        },
+        {
+          "name": "Print 3D",
+          "key": "print3d",
+          "parts": [
+            { "id": "fl_3d_espaciadorpoleafr", "name": "EspaciadorPoleaFR", "qty": 16 },
+            { "id": "fl_3d_espaciadorruedaoruga", "name": "EspaciadorRuedaOruga", "qty": 8 },
+            { "id": "fl_3d_pulleytracba", "name": "PulleyTracBa", "qty": 4 },
+            { "id": "fl_3d_pulleytracfr", "name": "PulleyTracFR", "qty": 4 },
+            { "id": "fl_3d_espaciadorruedatijera", "name": "espaciadorRuedaTijera", "qty": 16 },
+            { "id": "fl_3d_espaciadorpoleaba", "name": "EspaciadorPoleaBA", "qty": 8 }
+          ]
+        }
       ]
     },
     {
-      "name": "Actuación",
-      "parts": [
-        { "id": "AC-010", "name": "Soporte motor", "qty": 2, "material": "Al 6061", "process": "CNC", "notes": "Usar fijación paralela." },
-        { "id": "AC-011", "name": "Polea", "qty": 1, "material": "Al 7075", "process": "Torno", "notes": "" }
+      "name": "Chasis",
+      "key": "chasis",
+      "sections": [
+        {
+          "name": "Maquinado",
+          "key": "machining",
+          "parts": [
+            { "id": "ch_m_ejesoportetansmision", "name": "EjeSoporteTansmision", "qty": 4 },
+            { "id": "ch_m_ejetransmisionhex", "name": "EjeTransmisionHex", "qty": 4 },
+            { "id": "ch_m_soporte_chasis", "name": "Soporte Chasis", "qty": 4 },
+            { "id": "ch_m_lateralchasis", "name": "lateralChasis", "qty": 2 },
+            { "id": "ch_m_soportetransmision", "name": "soporteTransmision", "qty": 2 },
+            { "id": "ch_m_frente2chasis", "name": "Frente2Chasis", "qty": 2 },
+            { "id": "ch_m_frente1chasis", "name": "Frente1Chasis", "qty": 2 },
+            { "id": "ch_m_pisochasis", "name": "PisoChasis", "qty": 1 },
+            { "id": "ch_m_ejecajagiro", "name": "EjeCajaGiro", "qty": 4 }
+          ]
+        },
+        {
+          "name": "Print 3D",
+          "key": "print3d",
+          "parts": [
+            { "id": "ch_3d_espaciadorpoleagiro", "name": "EspaciadorPoleaGiro", "qty": 4 },
+            { "id": "ch_3d_pulleysgiro", "name": "PulleysGiro", "qty": 4 },
+            { "id": "ch_3d_espaciadorbanda", "name": "EspaciadorBanda", "qty": 4 }
+          ]
+        }
       ]
     }
   ]
