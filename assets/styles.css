@@ -125,9 +125,6 @@ body{
 .btn--danger:hover{border-color: rgba(255,122,122,.75)}
 .btn--small{padding:7px 9px; border-radius: 10px; font-size:12.5px}
 
-.grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px}
-@media (max-width: 920px){ .grid2{grid-template-columns:1fr} }
-
 .subcard{
   background: rgba(15,19,24,.55);
   border:1px solid rgba(31,42,56,.85);
@@ -139,6 +136,8 @@ body{
   display:flex; align-items:center; justify-content:space-between;
   border-bottom:1px solid rgba(31,42,56,.85);
 }
+.pad{padding:12px}
+
 .list{display:flex; flex-direction:column}
 .item{
   padding:12px;
@@ -154,13 +153,6 @@ body{
 .item__meta code{font-family:var(--mono); color:var(--text)}
 .item__actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end}
 
-a.link{
-  color: var(--text);
-  text-decoration:none;
-  border-bottom:1px dotted rgba(106,169,255,.55);
-}
-a.link:hover{border-bottom-color: rgba(106,169,255,.95)}
-
 .badge{
   font-family: var(--mono);
   font-size: 12px;
@@ -171,12 +163,10 @@ a.link:hover{border-bottom-color: rgba(106,169,255,.95)}
   background: rgba(11,13,16,.25);
 }
 
-.hint{color:var(--muted); margin:12px 0 0}
 code{font-family:var(--mono); font-size:12.8px; background: rgba(11,13,16,.45); padding:2px 6px; border-radius:8px; border:1px solid rgba(31,42,56,.7)}
 
-.bomStats{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px}
 .progress{
-  height:10px; width:180px;
+  height:10px;
   border-radius:999px;
   background: rgba(11,13,16,.35);
   border:1px solid rgba(31,42,56,.85);
@@ -197,6 +187,9 @@ code{font-family:var(--mono); font-size:12.8px; background: rgba(11,13,16,.45); 
 .muted{color:var(--muted)}
 .small{font-size:12.5px}
 
+.hint{color:var(--muted); margin-top:6px}
+.hr{height:1px; background:rgba(31,42,56,.7); margin:12px 0}
+
 .footer{padding:14px 4px}
 
 /* Gantt */
@@ -214,7 +207,6 @@ code{font-family:var(--mono); font-size:12.8px; background: rgba(11,13,16,.45); 
 .dot--done{background: rgba(111,230,183,.7)}
 .dot--blocked{background: rgba(255,122,122,.7)}
 
-.prose{color:var(--text)}
 .prose p, .prose li{color:var(--muted)}
 .prose h2{margin-top:0}
 
@@ -254,3 +246,10 @@ code{font-family:var(--mono); font-size:12.8px; background: rgba(11,13,16,.45); 
   color: var(--muted);
   font-size:12.5px;
 }
+
+.formGrid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:12px;
+}
+@media (max-width: 920px){ .formGrid{grid-template-columns:1fr} }

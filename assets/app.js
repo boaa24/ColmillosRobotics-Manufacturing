@@ -1,13 +1,17 @@
-// Robotics Manufacturing Hub - v2
-const LS_KEY = "rmh_state_v2";
+// Robotics Manufacturing Hub - v3 (Gantt editable + files registry)
+const LS_KEY = "rmh_state_v3";
 const $ = (q) => document.querySelector(q);
 const $$ = (q) => Array.from(document.querySelectorAll(q));
 
-const state = { bomDone: {}, taskStatus: {} };
+const state = {
+  bomDone: {},
+  tasksLocal: null,      // array de tareas editable
+  filesLocal: [],        // entries extra para files.json
+};
 
 let filesData = null;
 let bomData = null;
-let tasksData = null;
+let tasksTemplate = null;
 
 function loadState() {
   try {
@@ -15,7 +19,8 @@ function loadState() {
     if (!raw) return;
     const parsed = JSON.parse(raw);
     state.bomDone = parsed.bomDone || {};
-    state.taskStatus = parsed.taskStatus || {};
+    state.tasksLocal = parsed.tasksLocal || null;
+    state.filesLocal = parsed.filesLocal || [];
   } catch {}
 }
 function saveState() {
@@ -24,7 +29,8 @@ function saveState() {
 }
 function resetState() {
   state.bomDone = {};
-  state.taskStatus = {};
+  state.tasksLocal = null;
+  state.filesLocal = [];
   saveState();
   renderAll();
 }
@@ -56,14 +62,14 @@ function siteBase() {
   return origin + p;
 }
 
-/* -------- Tabs -------- */
+/* ---------- Tabs ---------- */
 function setTab(name) {
   $$(".tab").forEach(btn => btn.classList.toggle("is-active", btn.dataset.tab === name));
   $$(".tabpane").forEach(p => p.classList.toggle("is-active", p.id === `tab-${name}`));
   $$(".tab").forEach(btn => btn.setAttribute("aria-selected", btn.dataset.tab === name ? "true" : "false"));
 }
 
-/* -------- BOM progress -------- */
+/* ---------- BOM progress ---------- */
 function getDone(partId) { return Number(state.bomDone[partId] || 0); }
 function setDone(partId, done) {
   if (done <= 0) delete state.bomDone[partId];
@@ -73,7 +79,6 @@ function setDone(partId, done) {
 function isPartDone(p) {
   return clamp(getDone(p.id), 0, p.qty) >= p.qty;
 }
-
 function bomTotalsAll() {
   let req = 0, done = 0;
   for (const g of (bomData?.groups || [])) {
@@ -98,7 +103,12 @@ function sectionTotals(groupKey, sectionKey) {
   return { req, done, remaining: Math.max(0, req - done) };
 }
 
-/* -------- Files inference -------- */
+/* ---------- Files registry (local + json) ---------- */
+function getFileItems() {
+  const base = (filesData?.items || []);
+  const local = (state.filesLocal || []);
+  return [...base, ...local];
+}
 function inferGroup(it) {
   const g = (it.group || it.assembly || "").toString().toLowerCase();
   if (g.includes("flipper")) return "flipper";
@@ -120,7 +130,6 @@ function inferSection(it) {
 function inferType(it) {
   return (it.type || it.fileType || "").toString().toLowerCase();
 }
-
 function renderFileItem(it) {
   const url = it.path;
   const abs = siteBase() + url.replace(/^\//, "");
@@ -129,12 +138,10 @@ function renderFileItem(it) {
     <div class="item">
       <div class="item__main">
         <div class="item__title">${escapeHtml(it.name)} ${tags ? `<span class="small">${tags}</span>` : ""}</div>
-        <div class="item__meta">${it.id ? `<code>${escapeHtml(it.id)}</code>` : ""}</div>
-        ${it.desc ? `<div class="item__meta">${escapeHtml(it.desc)}</div>` : ""}
+        <div class="item__meta">${it.id ? `<code>${escapeHtml(it.id)}</code>` : ""} ${it.path ? `• <code>${escapeHtml(it.path)}</code>` : ""}</div>
       </div>
       <div class="item__actions">
         <a class="btn btn--small" href="${escapeAttr(url)}" target="_blank" rel="noopener">Abrir</a>
-        <a class="btn btn--small" href="${escapeAttr(url)}" download>Descargar</a>
         <button class="btn btn--small btnCopy" data-url="${escapeAttr(abs)}">Copiar link</button>
       </div>
     </div>
@@ -142,7 +149,7 @@ function renderFileItem(it) {
 }
 
 function renderFilesBlock(groupKey, sectionKey) {
-  const items = (filesData?.items || [])
+  const items = getFileItems()
     .filter(it => inferGroup(it) === groupKey)
     .filter(it => inferSection(it) === sectionKey);
 
@@ -174,7 +181,7 @@ function renderFilesBlock(groupKey, sectionKey) {
   `;
 }
 
-/* -------- BOM per section -------- */
+/* ---------- BOM per section ---------- */
 function partMatches(p, q, filter) {
   const done = isPartDone(p);
   if (filter === "pending" && done) return false;
@@ -183,7 +190,6 @@ function partMatches(p, q, filter) {
   const hay = `${p.id} ${p.name}`.toLowerCase();
   return hay.includes(q);
 }
-
 function renderBomPartRow(p) {
   const done = clamp(getDone(p.id), 0, p.qty);
   const rem = Math.max(0, p.qty - done);
@@ -210,7 +216,6 @@ function renderBomPartRow(p) {
     </div>
   `;
 }
-
 function renderBomBlock(groupKey, sectionKey, q, filter) {
   const g = (bomData?.groups || []).find(x => x.key === groupKey);
   const s = g?.sections?.find(x => x.key === sectionKey);
@@ -233,19 +238,15 @@ function renderBomBlock(groupKey, sectionKey, q, filter) {
   `;
 }
 
-/* -------- Group render -------- */
+/* ---------- Group render ---------- */
 function renderGroup(groupKey) {
   const container = groupKey === "flipper" ? $("#flipperContent") : $("#chasisContent");
   if (!container) return;
 
-  if (!bomData || !tasksData) {
-    container.innerHTML = emptyMsg("Cargando datos…");
-    return;
-  }
+  if (!bomData) { container.innerHTML = emptyMsg("Cargando datos…"); return; }
 
   const qEl = groupKey === "flipper" ? $("#qFlipper") : $("#qChasis");
   const fEl = groupKey === "flipper" ? $("#filterFlipper") : $("#filterChasis");
-
   const q = (qEl?.value || "").toLowerCase().trim();
   const filter = fEl?.value || "all";
 
@@ -262,7 +263,7 @@ function renderGroup(groupKey) {
         <span class="badge">Maquinado: ${machiningTotals.done}/${machiningTotals.req}</span>
         <span class="badge">Print3D: ${printTotals.done}/${printTotals.req}</span>
       </div>
-      <div class="muted small">Archivos se controlan en <code>data/files.json</code></div>
+      <div class="muted small">Archivos: repo + manifiesto local (export)</div>
     </div>
 
     <div class="sectionHeader">
@@ -284,7 +285,7 @@ function renderGroup(groupKey) {
     </div>
   `;
 
-  // qty buttons
+  // bind qty buttons
   container.querySelectorAll(".btnInc").forEach(b => b.onclick = () => {
     const id = b.dataset.id; const max = Number(b.dataset.max);
     setDone(id, clamp(getDone(id) + 1, 0, max));
@@ -310,18 +311,20 @@ function renderGroup(groupKey) {
   });
 }
 
-/* -------- Global stats -------- */
+/* ---------- Global stats ---------- */
+function getTasks() {
+  // Si usuario ya editó, usa local; si no, usa template
+  return state.tasksLocal || (tasksTemplate?.tasks || []);
+}
 function renderGlobalStats() {
-  if (!bomData || !tasksData) return;
+  const el = $("#globalStats");
+  if (!el || !bomData) return;
 
   const bom = bomTotalsAll();
   const pct = bom.req ? Math.round((bom.done / bom.req) * 100) : 0;
 
-  const tasks = tasksData.tasks.map(t => ({ ...t, status: state.taskStatus[t.id] || t.status || "todo" }));
+  const tasks = getTasks();
   const counts = tasks.reduce((acc, t) => { acc[t.status] = (acc[t.status] || 0) + 1; return acc; }, {});
-
-  const el = $("#globalStats");
-  if (!el) return;
 
   el.innerHTML = `
     <span class="pill"><span class="k">BOM</span> <strong>${bom.done}</strong>/<strong>${bom.req}</strong> <span class="muted">(${pct}%)</span></span>
@@ -331,13 +334,13 @@ function renderGlobalStats() {
   `;
 }
 
-/* -------- Gantt -------- 
+/* ---------- Gantt render + edit ---------- */
 function fmtDate(d) { const x = new Date(d); if (Number.isNaN(x.getTime())) return d; return x.toISOString().slice(0, 10); }
 function daysBetween(a, b) { return Math.round((new Date(b) - new Date(a)) / (1000 * 60 * 60 * 24)); }
 function addDays(dateStr, days) { const d = new Date(dateStr); d.setDate(d.getDate() + days); return d.toISOString().slice(0, 10); }
 
-function listAssignees() {
-  const set = new Set(tasksData.tasks.map(t => t.assignee).filter(Boolean));
+function listAssigneesFromTasks(tasks) {
+  const set = new Set(tasks.map(t => t.assignee).filter(Boolean));
   return Array.from(set).sort((a, b) => a.localeCompare(b));
 }
 function statusColor(s) {
@@ -355,54 +358,62 @@ function labelStatus(s) {
   if (s === "blocked") return "Bloqueado";
   return s;
 }
-function renderTaskRow(t) {
+
+let selectedTaskId = null;
+
+function taskRow(t) {
   const meta = `${t.assignee || "—"} • ${t.start}→${t.end}`;
+  const badge = `<span class="badge">${labelStatus(t.status)}</span>`;
   return `
-    <div class="item">
+    <div class="item taskRow" data-id="${escapeAttr(t.id)}">
       <div class="item__main">
-        <div class="item__title">${escapeHtml(t.name)}</div>
+        <div class="item__title">${escapeHtml(t.name)} ${badge}</div>
         <div class="item__meta"><code>${escapeHtml(t.id)}</code> • ${escapeHtml(meta)}</div>
       </div>
       <div class="item__actions">
-        <select class="select taskStatus" data-id="${escapeAttr(t.id)}" style="min-width:160px;">
-          ${["todo","doing","done","blocked"].map(s => `<option value="${s}" ${t.status === s ? "selected" : ""}>${labelStatus(s)}</option>`).join("")}
-        </select>
+        <button class="btn btn--small btnEditTask" data-id="${escapeAttr(t.id)}">Editar</button>
       </div>
     </div>
   `;
 }
 
 function renderGantt() {
-  if (!tasksData) return;
+  const tasksAll = getTasks();
+
+  // llenar filtro responsables
+  const sel = $("#filterAssignee");
+  if (sel) {
+    const assignees = listAssigneesFromTasks(tasksAll);
+    const current = sel.value || "all";
+    sel.innerHTML = `<option value="all">Todos</option>` + assignees.map(a => `<option value="${escapeAttr(a)}">${escapeHtml(a)}</option>`).join("");
+    sel.value = assignees.includes(current) ? current : "all";
+  }
 
   const assignee = $("#filterAssignee")?.value || "all";
   const status = $("#filterStatus")?.value || "all";
   const zoom = $("#ganttZoom")?.value || "week";
 
-  const tasks = tasksData.tasks
-    .map(t => ({ ...t, status: state.taskStatus[t.id] || t.status || "todo" }))
+  const tasks = tasksAll
     .filter(t => assignee === "all" ? true : t.assignee === assignee)
     .filter(t => status === "all" ? true : t.status === status);
 
-  const taskCount = $("#taskCount");
-  if (taskCount) taskCount.textContent = `${tasks.length} tarea(s)`;
-
+  $("#taskCount").textContent = `${tasksAll.length} total`;
+  $("#taskListCount").textContent = `${tasks.length} visibles`;
   const list = $("#taskList");
-  if (list) list.innerHTML = tasks.map(renderTaskRow).join("") || emptyMsg("Sin tareas");
+  list.innerHTML = tasks.map(taskRow).join("") || emptyMsg("Sin tareas");
 
-  $$(".taskStatus").forEach(sel => sel.onchange = () => {
-    state.taskStatus[sel.dataset.id] = sel.value;
-    saveState();
-    renderGantt();
-  });
+  // click edit
+  list.querySelectorAll(".btnEditTask").forEach(b => b.onclick = () => loadTaskToForm(b.dataset.id));
 
   const gantt = $("#gantt");
-  if (!gantt) return;
-
   if (tasks.length === 0) { gantt.innerHTML = emptyMsg("Nada que graficar"); return; }
 
-  const minStart = tasks.map(t => t.start).reduce((a, b) => a < b ? a : b);
-  const maxEnd = tasks.map(t => t.end).reduce((a, b) => a > b ? a : b);
+  const starts = tasks.map(t => t.start);
+  const ends = tasks.map(t => t.end);
+
+  const minStart = starts.reduce((a, b) => a < b ? a : b);
+  const maxEnd = ends.reduce((a, b) => a > b ? a : b);
+
   const windowStart = addDays(minStart, -2);
   const windowEnd = addDays(maxEnd, 2);
 
@@ -466,8 +477,155 @@ function renderGantt() {
   svg.push(`</svg>`);
   gantt.innerHTML = svg.join("");
 }
-*/
-/* -------- Export/Import -------- */
+
+/* ---------- Task editor helpers ---------- */
+function genTaskId(tasks) {
+  // T-001, T-002...
+  const nums = tasks
+    .map(t => (t.id || "").match(/^T-(\d+)$/))
+    .filter(Boolean)
+    .map(m => Number(m[1]));
+  const next = (nums.length ? Math.max(...nums) : 0) + 1;
+  return `T-${String(next).padStart(3, "0")}`;
+}
+
+function clearTaskForm() {
+  selectedTaskId = null;
+  $("#taskId").value = "";
+  $("#taskName").value = "";
+  $("#taskAssignee").value = "";
+  $("#taskStatus").value = "todo";
+  $("#taskStart").value = "";
+  $("#taskEnd").value = "";
+  $("#taskAttachPath").value = "";
+  renderTaskAttachList([]);
+}
+
+function getTaskById(id) {
+  return getTasks().find(t => t.id === id);
+}
+
+function loadTaskToForm(id) {
+  const t = getTaskById(id);
+  if (!t) return;
+  selectedTaskId = id;
+  $("#taskId").value = t.id;
+  $("#taskName").value = t.name || "";
+  $("#taskAssignee").value = t.assignee || "";
+  $("#taskStatus").value = t.status || "todo";
+  $("#taskStart").value = t.start || "";
+  $("#taskEnd").value = t.end || "";
+  renderTaskAttachList(t.attachments || []);
+}
+
+function renderTaskAttachList(arr) {
+  const list = $("#taskAttachList");
+  $("#taskAttachCount").textContent = String(arr.length);
+  list.innerHTML = arr.length ? arr.map((p, i) => `
+    <div class="item">
+      <div class="item__main">
+        <div class="item__title">${escapeHtml(p)}</div>
+      </div>
+      <div class="item__actions">
+        <a class="btn btn--small" href="${escapeAttr(p)}" target="_blank" rel="noopener">Abrir</a>
+        <button class="btn btn--small btnAttachDel" data-i="${i}">Quitar</button>
+      </div>
+    </div>
+  `).join("") : emptyMsg("Sin adjuntos");
+
+  list.querySelectorAll(".btnAttachDel").forEach(b => b.onclick = () => {
+    if (!selectedTaskId) return;
+    const tasks = [...getTasks()];
+    const idx = tasks.findIndex(t => t.id === selectedTaskId);
+    if (idx < 0) return;
+    const at = [...(tasks[idx].attachments || [])];
+    at.splice(Number(b.dataset.i), 1);
+    tasks[idx] = { ...tasks[idx], attachments: at };
+    state.tasksLocal = tasks;
+    saveState();
+    loadTaskToForm(selectedTaskId);
+    renderAll();
+  });
+}
+
+function upsertTasks(tasks) {
+  state.tasksLocal = tasks;
+  saveState();
+}
+
+function addTaskFromForm() {
+  const tasks = [...getTasks()];
+
+  const name = $("#taskName").value.trim();
+  const assignee = $("#taskAssignee").value.trim();
+  const status = $("#taskStatus").value;
+  const start = $("#taskStart").value;
+  const end = $("#taskEnd").value;
+
+  if (!name) return alert("Pon nombre de tarea.");
+  if (!start || !end) return alert("Pon fechas inicio/fin.");
+  if (start > end) return alert("Inicio no puede ser después de fin.");
+
+  const id = genTaskId(tasks);
+  const t = { id, name, assignee, status, start, end, attachments: [] };
+  tasks.push(t);
+  upsertTasks(tasks);
+  loadTaskToForm(id);
+  renderAll();
+}
+
+function updateTaskFromForm() {
+  if (!selectedTaskId) return alert("Selecciona una tarea (Editar) o agrega una nueva.");
+  const tasks = [...getTasks()];
+  const idx = tasks.findIndex(t => t.id === selectedTaskId);
+  if (idx < 0) return alert("No existe esa tarea.");
+
+  const name = $("#taskName").value.trim();
+  const assignee = $("#taskAssignee").value.trim();
+  const status = $("#taskStatus").value;
+  const start = $("#taskStart").value;
+  const end = $("#taskEnd").value;
+
+  if (!name) return alert("Pon nombre de tarea.");
+  if (!start || !end) return alert("Pon fechas inicio/fin.");
+  if (start > end) return alert("Inicio no puede ser después de fin.");
+
+  tasks[idx] = { ...tasks[idx], name, assignee, status, start, end };
+  upsertTasks(tasks);
+  loadTaskToForm(selectedTaskId);
+  renderAll();
+}
+
+function deleteSelectedTask() {
+  if (!selectedTaskId) return alert("No hay tarea seleccionada.");
+  if (!confirm("¿Borrar esta tarea?")) return;
+
+  const tasks = [...getTasks()].filter(t => t.id !== selectedTaskId);
+  upsertTasks(tasks);
+  clearTaskForm();
+  renderAll();
+}
+
+function addAttachToTask() {
+  if (!selectedTaskId) return alert("Selecciona una tarea primero.");
+  const path = $("#taskAttachPath").value.trim();
+  if (!path) return;
+
+  const tasks = [...getTasks()];
+  const idx = tasks.findIndex(t => t.id === selectedTaskId);
+  if (idx < 0) return;
+
+  const at = [...(tasks[idx].attachments || [])];
+  at.push(path);
+  tasks[idx] = { ...tasks[idx], attachments: at };
+  upsertTasks(tasks);
+
+  $("#taskAttachPath").value = "";
+  loadTaskToForm(selectedTaskId);
+  renderAll();
+}
+
+/* ---------- Export/Import ---------- */
 function downloadJSON(filename, obj) {
   const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
@@ -476,14 +634,87 @@ function downloadJSON(filename, obj) {
   a.click();
   URL.revokeObjectURL(a.href);
 }
-function mergeImported(imported) {
-  if (imported?.bomDone) state.bomDone = { ...state.bomDone, ...imported.bomDone };
-  if (imported?.taskStatus) state.taskStatus = { ...state.taskStatus, ...imported.taskStatus };
+
+function exportTasksJSON() {
+  downloadJSON("tasks.json", { tasks: getTasks() });
+}
+
+async function importTasksJSON(file) {
+  const text = await file.text();
+  const parsed = JSON.parse(text);
+  if (!parsed?.tasks || !Array.isArray(parsed.tasks)) throw new Error("Formato inválido (espera {tasks:[...]}).");
+  state.tasksLocal = parsed.tasks;
   saveState();
+  clearTaskForm();
   renderAll();
 }
 
-/* -------- Init -------- */
+function exportFilesJSON() {
+  // export base + local
+  downloadJSON("files.json", { items: getFileItems() });
+}
+
+/* ---------- Files registry UI ---------- */
+function suggestPath(group, section, type, filename) {
+  const base = `files/${group}/${section}`;
+  if (section === "machining") {
+    if (type === "plan") return `${base}/planos/${filename}`;
+    if (type === "gcode") return `${base}/gcode/${filename}`;
+  } else {
+    // print3d
+    if (type === "stl") return `${base}/stl/${filename}`;
+    if (type === "gcode") return `${base}/gcode/${filename}`;
+  }
+  return `${base}/${filename}`;
+}
+
+function renderFilesLocalList() {
+  const list = $("#filesLocalList");
+  const local = state.filesLocal || [];
+  $("#filesLocalCount").textContent = String(local.length);
+
+  list.innerHTML = local.length ? local.map((it, idx) => `
+    <div class="item">
+      <div class="item__main">
+        <div class="item__title">${escapeHtml(it.name || "(sin nombre)")}</div>
+        <div class="item__meta">
+          <code>${escapeHtml(it.group || "")}</code> • <code>${escapeHtml(it.section || "")}</code> • <code>${escapeHtml(it.type || "")}</code><br/>
+          <code>${escapeHtml(it.path || "")}</code>
+        </div>
+      </div>
+      <div class="item__actions">
+        <button class="btn btn--small btnFileDel" data-i="${idx}">Quitar</button>
+      </div>
+    </div>
+  `).join("") : emptyMsg("Sin entradas locales");
+
+  list.querySelectorAll(".btnFileDel").forEach(b => b.onclick = () => {
+    const i = Number(b.dataset.i);
+    state.filesLocal.splice(i, 1);
+    saveState();
+    renderFilesLocalList();
+    renderAll();
+  });
+}
+
+function addFileToLocalManifest() {
+  const group = $("#fileGroup").value;
+  const section = $("#fileSection").value;
+  const type = $("#fileType").value;
+  const id = $("#fileId").value.trim();
+  const name = $("#fileName").value.trim();
+  const path = $("#filePath").value.trim();
+  const tags = $("#fileTags").value.split(",").map(s => s.trim()).filter(Boolean);
+
+  if (!name) return alert("Pon nombre visible.");
+  if (!path) return alert("Pon ruta.");
+  state.filesLocal.push({ group, section, type, id: id || undefined, name, path, tags });
+  saveState();
+  renderFilesLocalList();
+  renderAll();
+}
+
+/* ---------- Wire UI + init ---------- */
 function on(el, evt, fn) { if (el) el.addEventListener(evt, fn); }
 
 function wireUI() {
@@ -496,22 +727,73 @@ function wireUI() {
 
   ["filterAssignee", "filterStatus", "ganttZoom"].forEach(id => on($("#" + id), "change", renderGantt));
 
+  // Global export/import/reset
   on($("#btnExport"), "click", () => downloadJSON("rmh_progress.json", state));
 
-  const importFile = $("#importFile");
-  if (importFile) {
-    importFile.addEventListener("change", async (e) => {
-      const f = e.target.files?.[0];
-      if (!f) return;
-      try { mergeImported(JSON.parse(await f.text())); }
-      catch { alert("Import falló: JSON inválido."); }
-      finally { e.target.value = ""; }
-    });
-  }
+  on($("#importFile"), "change", async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    try {
+      const imported = JSON.parse(await f.text());
+      state.bomDone = imported.bomDone || state.bomDone;
+      state.tasksLocal = imported.tasksLocal || state.tasksLocal;
+      state.filesLocal = imported.filesLocal || state.filesLocal;
+      saveState();
+      clearTaskForm();
+      renderFilesLocalList();
+      renderAll();
+    } catch {
+      alert("Import falló: JSON inválido.");
+    } finally {
+      e.target.value = "";
+    }
+  });
 
   on($("#btnReset"), "click", () => {
     if (confirm("Esto borra el progreso guardado en ESTE navegador. ¿Seguro?")) resetState();
   });
+
+  // Task editor buttons
+  on($("#btnTaskAdd"), "click", addTaskFromForm);
+  on($("#btnTaskUpdate"), "click", updateTaskFromForm);
+  on($("#btnTaskClear"), "click", () => { clearTaskForm(); });
+  on($("#btnTaskDelete"), "click", deleteSelectedTask);
+  on($("#btnTaskAttachAdd"), "click", addAttachToTask);
+
+  // tasks export/import
+  on($("#btnTasksExport"), "click", exportTasksJSON);
+  on($("#tasksImportFile"), "change", async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    try { await importTasksJSON(f); }
+    catch (err) { alert(`Import tasks falló: ${err.message}`); }
+    finally { e.target.value = ""; }
+  });
+
+  // files registry
+  on($("#btnFilesExport"), "click", exportFilesJSON);
+  on($("#btnFileAdd"), "click", addFileToLocalManifest);
+
+  on($("#filePick"), "change", (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const group = $("#fileGroup").value;
+    const section = $("#fileSection").value;
+    const type = $("#fileType").value;
+
+    // autollenar nombre si vacío
+    if (!$("#fileName").value.trim()) $("#fileName").value = f.name;
+
+    // sugerir path
+    $("#filePath").value = suggestPath(group, section, type, f.name);
+  });
+
+  // Si cambias selectores, re-sugiere path si hay file
+  ["fileGroup","fileSection","fileType"].forEach(id => on($("#"+id), "change", () => {
+    const f = $("#filePick").files?.[0];
+    if (!f) return;
+    $("#filePath").value = suggestPath($("#fileGroup").value, $("#fileSection").value, $("#fileType").value, f.name);
+  }));
 }
 
 function renderAll() {
@@ -526,20 +808,21 @@ async function init() {
   wireUI();
 
   try {
-    [filesData, bomData, tasksData] = await Promise.all([
+    [filesData, bomData, tasksTemplate] = await Promise.all([
       fetchJSON("data/files.json"),
       fetchJSON("data/bom.json"),
       fetchJSON("data/tasks.json")
     ]);
 
-    const assignees = listAssignees();
-    const sel = $("#filterAssignee");
-    if (sel) {
-      sel.innerHTML =
-        `<option value="all">Todos</option>` +
-        assignees.map(a => `<option value="${escapeAttr(a)}">${escapeHtml(a)}</option>`).join("");
+    // Si nunca editaron tareas, usar template tal cual (sin guardarlo)
+    if (!state.tasksLocal) {
+      // opcional: podrías clonar si quieres persistir de una vez
+      // state.tasksLocal = tasksTemplate.tasks;
+      // saveState();
     }
 
+    renderFilesLocalList();
+    clearTaskForm();
     renderAll();
   } catch (e) {
     document.body.innerHTML = `
