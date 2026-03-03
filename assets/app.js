@@ -331,7 +331,7 @@ function renderGlobalStats() {
   `;
 }
 
-/* -------- Gantt -------- */
+/* -------- Gantt -------- 
 function fmtDate(d) { const x = new Date(d); if (Number.isNaN(x.getTime())) return d; return x.toISOString().slice(0, 10); }
 function daysBetween(a, b) { return Math.round((new Date(b) - new Date(a)) / (1000 * 60 * 60 * 24)); }
 function addDays(dateStr, days) { const d = new Date(dateStr); d.setDate(d.getDate() + days); return d.toISOString().slice(0, 10); }
@@ -466,7 +466,7 @@ function renderGantt() {
   svg.push(`</svg>`);
   gantt.innerHTML = svg.join("");
 }
-
+*/
 /* -------- Export/Import -------- */
 function downloadJSON(filename, obj) {
   const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
